@@ -1,0 +1,17 @@
+# .gitignore
+
+# virtualenv
+venv/
+ENV/
+
+# python
+*.pyc
+
+# ide
+.idea/
+*.swp
+.project/
+
+# large files
+data/
+
