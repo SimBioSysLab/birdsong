@@ -18,6 +18,9 @@ import scipy.signal as scipy_signal
 import scipy.io as sio
 import scipy.io.wavfile as wavfile
 
+if __name__ == '__main__':
+    raise Exception('This file is not executable.')
+
 # Default spectrogram parameters.
 NFFT = 256
 NOVERLAP = 128
@@ -95,8 +98,11 @@ def plot_sample(x,
         d = data[i].T
         for _ in range(downsample):
             d = downsample_arr(d)
+
         if normalize:
             d = np.power(d, 0.45) * 1e3
+        else:
+            d = d * 1e5
 
         ax = plt.subplot(height, width, i + 1)
         ax.imshow(d, vmin=0, vmax=1)
@@ -105,6 +111,12 @@ def plot_sample(x,
         ax.set_yticklabels(flabels)
         ax.set_xlabel('Time (msec)')
         ax.set_ylabel('Freq (kHz)')
+
+    if normalize:
+        plt.suptitle('Normalized samples of spectrograms')
+    else:
+        plt.suptitle('Samples of spectrograms')
+
     plt.show()
 
 
@@ -164,7 +176,20 @@ def get_freq_time_labels(time_length):
 def get_all_spectrograms(time_length,
                          cache='/tmp/spectrograms.npy',
                          rebuild=False):
-    """Yields spectrograms as Numpy arrays, caching them in `cache`."""
+    """Returns a Numpy array with shape (batch_size, time_length, freq).
+
+    Args:
+        time_length: int, number of time steps per spectrogram. Each step is
+            about 1/100 ms. Using ~300 seems to look good.
+        cache: str, where to cache the array to avoid regenerating every time
+            the method is called.
+        rebuild: bool, if set, the dataset is rebuilt (useful if changes are
+            made to the spectrogram parameters, for example).
+
+    Returns:
+        Numpy array with shape (batch_size, time_length, freq), the stacked
+            spectrograms.
+    """
 
     if not rebuild and os.path.exists(cache):
         all_sgrams = np.load(cache)
@@ -205,6 +230,3 @@ def get_all_spectrograms(time_length,
     print('%d spectrograms of length %d' % (len(all_sgrams), time_length))
 
     return all_sgrams
-
-if __name__ == '__main__':
-    raise Exception('This file is not executable.')

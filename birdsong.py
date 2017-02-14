@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Some generative models for birdsong.
+Script for training generative model for birdsong.
 """
 
 import argparse
 import os
 
+import model
 import utils
 
 
@@ -22,6 +23,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     x = utils.get_all_spectrograms(args.time_length, rebuild=args.rebuild)
-
-    # Plots some samples.
-    utils.plot_sample(x, downsample=0)
