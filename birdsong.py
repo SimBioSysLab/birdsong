@@ -23,3 +23,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     x = utils.get_all_spectrograms(args.time_length, rebuild=args.rebuild)
+
+    # For plotting.
+    # utils.plot_sample(x)

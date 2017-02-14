@@ -3,6 +3,9 @@
 from __future__ import division
 from __future__ import print_function
 
+if __name__ == '__main__':
+    raise Exception('This file is not executable. Use birdsong.py')
+
 import os
 
 try:
@@ -17,9 +20,6 @@ import numpy as np
 import scipy.signal as scipy_signal
 import scipy.io as sio
 import scipy.io.wavfile as wavfile
-
-if __name__ == '__main__':
-    raise Exception('This file is not executable.')
 
 # Default spectrogram parameters.
 NFFT = 256
@@ -61,7 +61,7 @@ def plot_sample(x,
                 height=2,
                 shuffle=True,
                 downsample=0,
-                normalize=True):
+                normalize=False):
     """Plots a sample of the data.
 
     Args:
