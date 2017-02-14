@@ -23,15 +23,27 @@ NFFT = 256
 NOVERLAP = 128
 
 
-def halve_image(x):
+def downsample_arr(x):
     """Takes average between four points to get one point."""
 
-    if len(x.shape) not in (2, 3):
-        raise ValueError('The Numpy array should either have dimensions '
-                         '(time, freq) or (batch_size, time, freq). Got '
-                         '%d dimensions.' % len(x.shape))
+    ndim = len(x.shape)
 
-    if len(x.shape) == 3:
+    if ndim == 1:
+        if x.shape[0] % 2:
+            x = x[:-1]
+
+        return (x[::2] + x[1::2]) / 2
+
+    elif ndim == 2:
+        if x.shape[0] % 2:
+            x = x[:-1, :]
+        if x.shape[1] % 2:
+            x = x[:, :-1]
+
+        return (x[::2, ::2] + x[::2, 1::2] +
+            x[1::2, ::2] + x[1::2, 1::2]) / 4
+
+    else:
         if x.shape[1] % 2:
             x = x[:, :-1, :]
         if x.shape[2] % 2:
@@ -40,17 +52,13 @@ def halve_image(x):
         return (x[:, ::2, ::2] + x[:, ::2, 1::2] +
                 x[:, 1::2, ::2] + x[:, 1::2, 1::2]) / 4
 
-    else:
-        if x.shape[0] % 2:
-            x = x[:-1, :]
-        if x.shape[1] % 2:
-            x = x[:, :-1]
 
-        return (x[::2, ::2] + x[::2, 1::2] +
-                x[1::2, ::2] + x[1::2, 1::2]) / 4
-
-
-def plot_sample(x, width=5, height=5, shuffle=True, downsample=0):
+def plot_sample(x,
+                width=3,
+                height=2,
+                shuffle=True,
+                downsample=0,
+                normalize=True):
     """Plots a sample of the data.
 
     Args:
@@ -59,9 +67,22 @@ def plot_sample(x, width=5, height=5, shuffle=True, downsample=0):
         height: int, the number of images tall.
         shuffle: bool, if set, select randomly, otherwise select in order.
         downsample: int, number of times to downsample image.
+        normalize: bool, if set, increase the small values.
     """
 
     n = width * height
+
+    # Gets the frequency and time labels.
+    time_length = x.shape[1]
+    flabels, tlabels = get_freq_time_labels(time_length)
+
+    for _ in range(downsample):
+        flabels = downsample_arr(flabels)
+        tlabels = downsample_arr(tlabels)
+
+    # Converts to more readable version.
+    flabels = ['%.2f' % (i / 1000) for i in flabels]
+    tlabels = ['%.2f' % (i * 1000 - 1) for i in tlabels]
 
     if shuffle:
         idx = np.random.choice(np.arange(x.shape[0]), n)
@@ -73,11 +94,17 @@ def plot_sample(x, width=5, height=5, shuffle=True, downsample=0):
     for i in range(n):
         d = data[i].T
         for _ in range(downsample):
-            d = halve_image(d)
+            d = downsample_arr(d)
+        if normalize:
+            d = np.power(d, 0.45) * 1e3
 
-        plt.subplot(height, width, i + 1)
-        plt.imshow(d)
-        plt.gca().invert_yaxis()
+        ax = plt.subplot(height, width, i + 1)
+        ax.imshow(d, vmin=0, vmax=1)
+        ax.invert_yaxis()
+        ax.set_xticklabels(tlabels)
+        ax.set_yticklabels(flabels)
+        ax.set_xlabel('Time (msec)')
+        ax.set_ylabel('Freq (kHz)')
     plt.show()
 
 
@@ -119,6 +146,20 @@ def get_directory(directory):
 
     return d
 
+# Some important directories.
+WAV_SEGMENTS = get_directory('USV_Segments/WAV')
+
+
+def get_freq_time_labels(time_length):
+    """Gets the frequency and time labels for the default settings."""
+
+    fname = os.listdir(WAV_SEGMENTS)[0]
+    fpath = os.path.join(WAV_SEGMENTS, fname)
+    fs, data = wavfile.read(fpath)
+    _, (freq, time) = get_spectrogram(data, fs)
+
+    return freq, time[:time_length]
+
 
 def get_all_spectrograms(time_length,
                          cache='/tmp/spectrograms.npy',
@@ -129,9 +170,15 @@ def get_all_spectrograms(time_length,
         all_sgrams = np.load(cache)
     else:
         all_sgrams = []
-
-        WAV_SEGMENTS = get_directory('USV_Segments/WAV')
         fnames = os.listdir(WAV_SEGMENTS)
+
+        def _check(sgram):
+            """Makes sure the spectrogram is something we want to use."""
+
+            if np.max(sgram) < 1e-6:
+                return False
+
+            return True
 
         for fname_nb, fname in enumerate(fnames):
             if not fname.endswith('wav'):
@@ -139,15 +186,19 @@ def get_all_spectrograms(time_length,
 
             fpath = os.path.join(WAV_SEGMENTS, fname)
             fs, data = wavfile.read(fpath)
-            sgram, _ = get_spectrogram(data, fs)  # (freq, time)
+            sgram, _ = get_spectrogram(data, fs)  # (freq, time
 
             # Gets the pixel dimensions of the spectrogram.
-            nb_freq, nb_time = sgram.shape
+            nb_time = sgram.shape[1]
+
+            # Adds spectrogram segments which satisfy the check from above.
             all_sgrams += [sgram[:, i - time_length:i]
-                           for i in range(time_length, nb_time, time_length)]
+                           for i in range(time_length, nb_time, time_length)
+                           if _check(sgram[:, i - time_length:i])]
 
             print('Processed %d / %d' % (fname_nb, len(fnames)), end='\r')
 
+        # Concatenates all samples and puts in order (batch_size, time, freq).
         all_sgrams = np.stack(all_sgrams).transpose(0, 2, 1)
         np.save(cache, all_sgrams)
 
