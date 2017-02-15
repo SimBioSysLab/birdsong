@@ -14,6 +14,7 @@ except ImportError:
     import pickle as pkl
 
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 import numpy as np
 
@@ -54,6 +55,38 @@ def downsample_arr(x):
 
         return (x[:, ::2, ::2] + x[:, ::2, 1::2] +
                 x[:, 1::2, ::2] + x[:, 1::2, 1::2]) / 4
+
+
+def plot_as_gif(x, interval=50):
+    """Plots data as a gif.
+
+    Args:
+        x: numpy array with shape (gif_length, time, freq).
+    """
+
+    # Gets the axis labels.
+    flabels, tlabels = get_freq_time_labels(x.shape[1])
+
+    # Plots the first sample.
+    fig, ax = plt.subplots()
+    im = plt.imshow(x[0].T, animated=True)
+
+    # Fixes the dimensions.
+    ax.invert_yaxis()
+    ax.set_xticklabels(tlabels)
+    ax.set_yticklabels(flabels)
+    ax.set_xlabel('Time (msec)')
+    ax.set_ylabel('Freq (kHz)')
+
+    def updatefig(i, *args):
+        im.set_array(x[i].T)
+        return im,
+
+    anim = FuncAnimation(fig, updatefig,
+            frames=np.arange(0, x.shape[0]),
+            interval=interval)
+
+    plt.show()
 
 
 def plot_sample(x,
@@ -100,9 +133,7 @@ def plot_sample(x,
             d = downsample_arr(d)
 
         if normalize:
-            d = np.power(d, 0.45) * 1e3
-        else:
-            d = d * 1e5
+            d = np.power(d, 0.45)
 
         ax = plt.subplot(height, width, i + 1)
         ax.imshow(d, vmin=0, vmax=1)
@@ -200,7 +231,7 @@ def get_all_spectrograms(time_length,
         def _check(sgram):
             """Makes sure the spectrogram is something we want to use."""
 
-            if np.max(sgram) < 1e-6:
+            if np.max(sgram) < 0.1:
                 return False
 
             return True
@@ -211,7 +242,10 @@ def get_all_spectrograms(time_length,
 
             fpath = os.path.join(WAV_SEGMENTS, fname)
             fs, data = wavfile.read(fpath)
-            sgram, _ = get_spectrogram(data, fs)  # (freq, time
+            sgram, _ = get_spectrogram(data, fs)  # (freq, time)
+
+            # Scales the spectrogram to something reasonable.
+            sgram *= 1e5
 
             # Gets the pixel dimensions of the spectrogram.
             nb_time = sgram.shape[1]
