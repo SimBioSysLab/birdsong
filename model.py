@@ -41,24 +41,24 @@ def interpolate_latent_space(model, nb_points=60):
     p3 = np.random.normal(size=latent_size)
 
     latent_vecs = []
-    x = p1
+    x = np.copy(p1)
 
     # p1 -> p2
     d1 = (p2 - p1) / nb_points
     for _ in range(nb_points):
-        latent_vecs.append(x)
+        latent_vecs.append(np.copy(x))
         x += d1
 
     # p2 -> p3
     d2 = (p3 - p2) / nb_points
     for _ in range(nb_points):
-        latent_vecs.append(x)
+        latent_vecs.append(np.copy(x))
         x += d2
 
     # p3 -> p1
     d3 = (p1 - p3) / nb_points
     for _ in range(nb_points):
-        latent_vecs.append(x)
+        latent_vecs.append(np.copy(x))
         x += d3
 
     # Stacks to get a single Numpy array.

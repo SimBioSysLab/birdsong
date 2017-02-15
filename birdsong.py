@@ -49,4 +49,4 @@ if __name__ == '__main__':
     # utils.plot_sample(x)
 
     pts = model.interpolate_latent_space(trained_model)
-    utils.plot_as_gif(pts)
+    utils.plot_as_gif(pts * 10)

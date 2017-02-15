@@ -57,19 +57,28 @@ def downsample_arr(x):
                 x[:, 1::2, ::2] + x[:, 1::2, 1::2]) / 4
 
 
-def plot_as_gif(x, interval=50):
+def plot_as_gif(x,
+                interval=50,
+                save_path='/tmp/generated.gif',
+                normalize=False):
     """Plots data as a gif.
 
     Args:
         x: numpy array with shape (gif_length, time, freq).
+        interval: int, the time between frames in milliseconds.
+        save_path: str, where to save the resulting gif.
+        normalize: bool, if set, normalize the spectrogram intensities.
     """
 
     # Gets the axis labels.
     flabels, tlabels = get_freq_time_labels(x.shape[1])
 
+    if normalize:
+        x = np.power(x, 0.45)
+
     # Plots the first sample.
     fig, ax = plt.subplots()
-    im = plt.imshow(x[0].T, animated=True)
+    im = plt.imshow(x[0].T, animated=True, vmin=0, vmax=1)
 
     # Fixes the dimensions.
     ax.invert_yaxis()
@@ -85,6 +94,9 @@ def plot_as_gif(x, interval=50):
     anim = FuncAnimation(fig, updatefig,
             frames=np.arange(0, x.shape[0]),
             interval=interval)
+
+    anim.save(save_path, dpi=80, writer='imagemagick')
+    print('Saved gif to "%s".' % save_path)
 
     plt.show()
 
