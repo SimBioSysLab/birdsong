@@ -16,6 +16,8 @@ return (x[::2, ::2] + x[::2, 1::2] +
         x[1::2, ::2] + x[1::2, 1::2]) / 4
 ````
 
+First, the spectrogram of the whole song is generated. Then the user specifies how many time bins to break it up into, and it is split into patches of that size (no overlap between patches - maybe there should be?). Then another step is to only use patches that have a maximum amplitude above some threshold.
+
 # Experiments
 
 ## 1
@@ -62,6 +64,32 @@ x = keras.layers.Dropout(0.3)(x)
 
 x = keras.layers.Dense(128,
         activation='tanh')(x)
+
+output = keras.layers.Dense(1,
+        activation='sigmoid')(x)
+
+return keras.models.Model([real_sound], [output], name='discriminator')
+````
+
+## 2
+
+Same data and generator as 1.
+
+### Discriminator
+
+Only one output Dense layer.
+
+````python
+real_sound = keras.layers.Input(shape=(time_length, freq_length))
+
+x = real_sound
+
+x = keras.layers.Reshape((time_length, freq_length, 1))(x)
+x = keras.layers.Convolution2D(64, 7, freq_length - 4,
+        activation=None,
+        border_mode='same')(x)
+
+x = keras.layers.GlobalMaxPooling2D()(x)
 
 output = keras.layers.Dense(1,
         activation='sigmoid')(x)

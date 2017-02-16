@@ -105,11 +105,6 @@ def build_discriminator(time_length, freq_length):
 
     x = keras.layers.GlobalMaxPooling2D()(x)
 
-    x = keras.layers.Dropout(0.3)(x)
-
-    x = keras.layers.Dense(128,
-            activation='tanh')(x)
-
     output = keras.layers.Dense(1,
             activation='sigmoid')(x)
 
