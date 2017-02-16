@@ -109,16 +109,20 @@ def plot_as_gif(x,
 
 
 def plot_sample(x,
+                title,
                 width=3,
                 height=2,
                 shuffle=True,
+                vmax=1,
                 normalize=False):
     """Plots a sample of the data.
 
     Args:
         x: numpy array with shape (batch_size, time, freq).
+        title: str, the title of the plot.
         width: int, the number of images wide.
         height: int, the number of images tall.
+        vmax: float or None, the max of imshow.
         shuffle: bool, if set, select randomly, otherwise select in order.
         normalize: bool, if set, increase the small values.
     """
@@ -128,6 +132,9 @@ def plot_sample(x,
     # Gets the frequency and time labels.
     time_length = x.shape[1]
     flabels, tlabels = get_freq_time_labels(time_length)
+
+    # Limits tlabels to the number of time steps in x.
+    tlabels = tlabels[:x.shape[1]]
 
     if shuffle:
         idx = np.random.choice(np.arange(x.shape[0]), n)
@@ -150,17 +157,13 @@ def plot_sample(x,
                 interpolation='none',
                 aspect='auto',
                 vmin=0,
-                vmax=1,
+                vmax=vmax,
                 extent=extent)
         ax.invert_yaxis()
         ax.set_xlabel('Time (msec)')
         ax.set_ylabel('Freq (kHz)')
 
-    if normalize:
-        plt.suptitle('Normalized samples of spectrograms')
-    else:
-        plt.suptitle('Samples of spectrograms')
-
+    plt.suptitle(title)
     plt.show()
 
 

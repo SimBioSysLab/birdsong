@@ -15,6 +15,8 @@ from keras import backend as K
 
 import gandlf
 
+import h5py
+
 
 def interpolate_latent_space(model, nb_points=60):
     """Interpolates between two random points in the latent vector space.
@@ -73,6 +75,25 @@ def interpolate_latent_space(model, nb_points=60):
     return samples
 
 
+def get_filters(cache='/tmp/birdsong.h5'):
+    """Returns the model filters to visualize."""
+
+    if not os.path.exists(cache):
+        raise ValueError('No weights at "%s" exist; train the model and '
+                         'save the weights to plot the filters.' % cache)
+
+    f = h5py.File(cache, mode='r')
+
+    if 'filter_layer' not in f:
+        raise ValueError('The cached weights should have a layer that '
+                         'is named "filter_layer" to identify which layer '
+                         'to visualize.')
+
+    x = f['filter_layer']['filter_layer_W:0'].value
+
+    return x
+
+
 def build_generator(time_length, freq_length):
     """Builds the generator model."""
 
@@ -103,7 +124,8 @@ def build_discriminator(time_length, freq_length):
     x = keras.layers.Reshape((time_length, freq_length, 1))(x)
     x = keras.layers.Convolution2D(64, 7, freq_length - 4,
             activation=None,
-            border_mode='same')(x)
+            border_mode='same',
+            name='filter_layer')(x)
 
     x = keras.layers.GlobalMaxPooling2D()(x)
 

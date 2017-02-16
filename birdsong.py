@@ -31,6 +31,10 @@ if __name__ == '__main__':
             default=False,
             action='store_true',
             help='If set, plot samples of generated data.')
+    parser.add_argument('-f', '--plot-filters',
+            default=False,
+            action='store_true',
+            help='If set, plot the model filters.')
     parser.add_argument('-G', '--plot-gif',
             default=False,
             action='store_true',
@@ -51,7 +55,7 @@ if __name__ == '__main__':
     x = utils.get_all_spectrograms(args.time_length, rebuild=args.rebuild_data)
 
     if args.plot_real:
-        utils.plot_sample(x)
+        utils.plot_sample(x, 'Spectrograms of real data')
 
     trained_model = model.train(x,
             nb_epoch=args.nb_epoch,
@@ -59,7 +63,19 @@ if __name__ == '__main__':
 
     if args.plot_gen:
         x = trained_model.sample(['normal'], num_samples=32)
-        utils.plot_sample(x)
+        utils.plot_sample(x, 'Generated spectrograms')
+
+    if args.plot_filters:
+        x = model.get_filters()
+
+        # Convolution-specific reshaping.
+        x = x.transpose(3, 0, 1, 2).squeeze()
+        print(x.shape)
+
+        utils.plot_sample(x, 'Convolutional filters',
+                vmax=None,
+                width=5,
+                height=1)
 
     if args.plot_gif:
         pts = model.interpolate_latent_space(trained_model, nb_points=60)
