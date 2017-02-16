@@ -83,7 +83,9 @@ def build_generator(time_length, freq_length):
     x = keras.layers.Dense(100, init='glorot_normal')(x)
     x = keras.layers.Activation('tanh')(x)
 
-    x = keras.layers.Dense(time_length * freq_length, init='glorot_uniform')(x)
+    x = keras.layers.Dense(time_length * freq_length,
+            # W_regularizer='l2',
+            init='glorot_uniform')(x)
     x = keras.layers.LeakyReLU(0.01)(x)
 
     output = keras.layers.Reshape((time_length, freq_length))(x)

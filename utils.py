@@ -25,7 +25,7 @@ import scipy.io.wavfile as wavfile
 # Default spectrogram parameters.
 NFFT = 256
 NOVERLAP = 128
-DOWNSAMPLE = 2
+DOWNSAMPLE = 0
 
 
 def downsample_arr(x):
@@ -83,6 +83,7 @@ def plot_as_gif(x,
     fig, ax = plt.subplots()
     im = plt.imshow(x[0].T,
             interpolation='none',
+            aspect='auto',
             animated=True,
             vmin=0,
             vmax=1,
@@ -145,7 +146,12 @@ def plot_sample(x,
             d = np.power(d, 0.45)
 
         ax = plt.subplot(height, width, i + 1)
-        ax.imshow(d, interpolation='none', vmin=0, vmax=1, extent=extent)
+        ax.imshow(d,
+                interpolation='none',
+                aspect='auto',
+                vmin=0,
+                vmax=1,
+                extent=extent)
         ax.invert_yaxis()
         ax.set_xlabel('Time (msec)')
         ax.set_ylabel('Freq (kHz)')
@@ -264,8 +270,8 @@ def get_all_spectrograms(time_length,
 
             # Adds spectrogram segments which satisfy the check from above.
             all_sgrams += [sgram[:, i - time_length:i]
-                           for i in range(time_length, nb_time, time_length)
-                           if _check(sgram[:, i - time_length:i])]
+                    for i in range(time_length, nb_time, time_length // 2)
+                    if _check(sgram[:, i - time_length:i])]
 
             print('Processed %d / %d' % (fname_nb, len(fnames)), end='\r')
 

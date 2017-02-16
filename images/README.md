@@ -97,3 +97,7 @@ output = keras.layers.Dense(1,
 return keras.models.Model([real_sound], [output], name='discriminator')
 ````
 
+## 3
+
+The generator and discriminator were the same as the one used in 2. I experimented with L2 normalization in the generator, but all it seemed to do was to make the outputs non-multimodal. The spectrograms were not downsampled at all for this version.
+
