@@ -73,33 +73,41 @@ def interpolate_latent_space(model, nb_points=60):
 def build_generator(time_length, freq_length):
     """Builds the generator model."""
 
-    latent = keras.layers.Input(shape=(100,))
+    latent = keras.layers.Input(shape=(500,))
 
     x = latent
 
-    x = keras.layers.Dense(time_length * 32)(x)
-    x = keras.layers.Activation('tanh')(x)
+    x = keras.layers.Dense(time_length * freq_length)(x)
+    x = keras.layers.LeakyReLU()(x)
     x = gandlf.layers.PermanentDropout(0.3)(x)
 
-    x = keras.layers.Reshape((time_length, 32))(x)
+    x = keras.layers.Reshape((time_length, freq_length, 1))(x)
 
-    x = keras.layers.GRU(128,
-            return_sequences=True,
-            activation='tanh')(x)
+    # x = keras.layers.wrappers.Bidirectional(keras.layers.GRU(128,
+    #         return_sequences=True,
+    #         activation='tanh'), 'concat')(x)
 
-    # for _ in range(3):
-    #     x = keras.layers.Convolution2D(64, 5, 5,
-    #             activation=None,
-    #             border_mode='same')(x)
-    #     x = keras.layers.LeakyReLU()(x)
+    for _ in range(3):
+        x = keras.layers.Convolution2D(64, 5, 5,
+                activation=None,
+                border_mode='same')(x)
+        x = gandlf.layers.PermanentDropout(0.3)(x)
+        x = keras.layers.LeakyReLU()(x)
 
-    x = keras.layers.TimeDistributed(
-            keras.layers.Dense(128, activation='linear'))(x)
-    x = keras.layers.Activation('tanh')(x)
+    # x = keras.layers.TimeDistributed(
+    #         keras.layers.Dense(128, activation='linear'))(x)
+    # x = keras.layers.Activation('tanh')(x)
 
-    x = keras.layers.TimeDistributed(
-            keras.layers.Dense(freq_length, activation='linear'))(x)
-    output = keras.layers.LeakyReLU()(x)
+    # x = keras.layers.TimeDistributed(
+    #         keras.layers.Dense(freq_length, activation='linear'))(x)
+    # output = keras.layers.LeakyReLU()(x)
+
+    x = keras.layers.Convolution2D(1, 5, 5,
+            activation=None,
+            border_mode='same')(x)
+    x = keras.layers.LeakyReLU()(x)
+
+    output = keras.layers.Reshape((time_length, freq_length))(x)
 
     return keras.models.Model([latent], [output], name='generator')
 
@@ -109,18 +117,16 @@ def build_discriminator(time_length, freq_length):
 
     real_sound = keras.layers.Input(shape=(time_length, freq_length))
 
-    x = real_sound
-    # x = keras.layers.GRU(freq_length,
-    #         return_sequences=False,
-    #         activation='tanh')(x)
+    x = keras.layers.Reshape((time_length, freq_length, 1))(real_sound)
 
     for _ in range(3):
-        x = keras.layers.Convolution1D(64, 5,
+        x = keras.layers.Convolution2D(64, 5, 5,
                 activation=None,
                 border_mode='valid')(x)
         x = keras.layers.LeakyReLU()(x)
 
     x = keras.layers.Flatten()(x)
+    x = keras.layers.Dropout(0.3)(x)
 
     output = keras.layers.Dense(1, activation='sigmoid')(x)
 
@@ -144,8 +150,8 @@ def train(X_data, nb_epoch=10, rebuild=False, cache='/tmp/birdsong.h5'):
     discriminator = build_discriminator(time_length, freq_length)
 
     # Compile the model.
-    loss = {'dis': 'binary_crossentropy', 'gen': 'binary_crossentropy'}
-    optimizer = keras.optimizers.RMSprop(lr=1e-4)
+    loss = {'dis': 'binary_crossentropy', 'gen': 'negative_binary_crossentropy'}
+    optimizer = ['sgd', keras.optimizers.Adam(lr=1e-4)]
     model = gandlf.Model(generator=generator, discriminator=discriminator)
 
     # Loads existing weights.

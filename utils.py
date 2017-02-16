@@ -25,6 +25,7 @@ import scipy.io.wavfile as wavfile
 # Default spectrogram parameters.
 NFFT = 256
 NOVERLAP = 128
+DOWNSAMPLE = 2
 
 
 def downsample_arr(x):
@@ -47,7 +48,7 @@ def downsample_arr(x):
         return (x[::2, ::2] + x[::2, 1::2] +
             x[1::2, ::2] + x[1::2, 1::2]) / 4
 
-    else:
+    else:  # Batch-wise.
         if x.shape[1] % 2:
             x = x[:, :-1, :]
         if x.shape[2] % 2:
@@ -105,7 +106,6 @@ def plot_sample(x,
                 width=3,
                 height=2,
                 shuffle=True,
-                downsample=0,
                 normalize=False):
     """Plots a sample of the data.
 
@@ -114,7 +114,6 @@ def plot_sample(x,
         width: int, the number of images wide.
         height: int, the number of images tall.
         shuffle: bool, if set, select randomly, otherwise select in order.
-        downsample: int, number of times to downsample image.
         normalize: bool, if set, increase the small values.
     """
 
@@ -123,10 +122,6 @@ def plot_sample(x,
     # Gets the frequency and time labels.
     time_length = x.shape[1]
     flabels, tlabels = get_freq_time_labels(time_length)
-
-    for _ in range(downsample):
-        flabels = downsample_arr(flabels)
-        tlabels = downsample_arr(tlabels)
 
     # Converts to more readable version.
     flabels = ['%.2f' % (i / 1000) for i in flabels]
@@ -141,8 +136,6 @@ def plot_sample(x,
     plt.figure()
     for i in range(n):
         d = data[i].T
-        for _ in range(downsample):
-            d = downsample_arr(d)
 
         if normalize:
             d = np.power(d, 0.45)
@@ -172,6 +165,11 @@ def get_spectrogram(signal, fs):
         nperseg=NFFT,
         noverlap=NOVERLAP,
         nfft=NFFT)
+
+    for _ in range(DOWNSAMPLE):
+        freq = downsample_arr(freq)
+        time = downsample_arr(time)
+        data = downsample_arr(data)
 
     return data, (freq, time)
 

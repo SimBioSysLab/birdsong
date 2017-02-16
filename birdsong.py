@@ -23,8 +23,20 @@ if __name__ == '__main__':
             default=False,
             action='store_true',
             help='If set, resets the model weigts.')
+    parser.add_argument('--plot-real',
+            default=False,
+            action='store_true',
+            help='If set, plot samples of real data.')
+    parser.add_argument('--plot-gen',
+            default=False,
+            action='store_true',
+            help='If set, plot samples of generated data.')
+    parser.add_argument('--plot-gif',
+            default=False,
+            action='store_true',
+            help='If set, make a gif of interpolating latent space.')
     parser.add_argument('--time-length',
-            default=300,
+            default=50,
             type=int,
             metavar='N',
             help='Number of bins in the time axis per sample.')
@@ -38,15 +50,17 @@ if __name__ == '__main__':
 
     x = utils.get_all_spectrograms(args.time_length, rebuild=args.rebuild_data)
 
-    # For plotting.
-    # utils.plot_sample(x)
+    if args.plot_real:
+        utils.plot_sample(x)
 
     trained_model = model.train(x,
             nb_epoch=args.nb_epoch,
             rebuild=args.rebuild_model)
 
-    # x = trained_model.sample(['normal'], num_samples=32)
-    # utils.plot_sample(x)
+    if args.plot_gen:
+        x = trained_model.sample(['normal'], num_samples=32)
+        utils.plot_sample(x)
 
-    pts = model.interpolate_latent_space(trained_model)
-    utils.plot_as_gif(pts * 10)
+    if args.plot_gif:
+        pts = model.interpolate_latent_space(trained_model, nb_points=60)
+        utils.plot_as_gif(pts)
