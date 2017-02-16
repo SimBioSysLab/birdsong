@@ -101,3 +101,5 @@ return keras.models.Model([real_sound], [output], name='discriminator')
 
 The generator and discriminator were the same as the one used in 2. I experimented with L2 normalization in the generator, but all it seemed to do was to make the outputs non-multimodal. The spectrograms were not downsampled at all for this version.
 
+The visualized filters are the convolutional filters used by the discriminator. In other words, they are the features that the discriminator thinks are important to look for to figure out if the sample is real data or fake data.
+
