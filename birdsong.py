@@ -15,32 +15,32 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Code for training birdsong generator model.')
 
-    parser.add_argument('--rebuild-data',
+    parser.add_argument('-d', '--rebuild-data',
             default=False,
             action='store_true',
             help='If set, rebuilds the dataset.')
-    parser.add_argument('--rebuild-model',
+    parser.add_argument('-m', '--rebuild-model',
             default=False,
             action='store_true',
             help='If set, resets the model weigts.')
-    parser.add_argument('--plot-real',
+    parser.add_argument('-r', '--plot-real',
             default=False,
             action='store_true',
             help='If set, plot samples of real data.')
-    parser.add_argument('--plot-gen',
+    parser.add_argument('-g', '--plot-gen',
             default=False,
             action='store_true',
             help='If set, plot samples of generated data.')
-    parser.add_argument('--plot-gif',
+    parser.add_argument('-G', '--plot-gif',
             default=False,
             action='store_true',
             help='If set, make a gif of interpolating latent space.')
-    parser.add_argument('--time-length',
+    parser.add_argument('-t', '--time-length',
             default=50,
             type=int,
             metavar='N',
             help='Number of bins in the time axis per sample.')
-    parser.add_argument('--nb-epoch',
+    parser.add_argument('-n', '--nb-epoch',
             default=10,
             type=int,
             metavar='N',

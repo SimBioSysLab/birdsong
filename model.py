@@ -9,7 +9,10 @@ if __name__ == '__main__':
 import os
 
 import numpy as np
+
 import keras
+from keras import backend as K
+
 import gandlf
 
 
@@ -73,39 +76,15 @@ def interpolate_latent_space(model, nb_points=60):
 def build_generator(time_length, freq_length):
     """Builds the generator model."""
 
-    latent = keras.layers.Input(shape=(500,))
+    latent = keras.layers.Input(shape=(100,))
 
     x = latent
 
-    x = keras.layers.Dense(time_length * freq_length)(x)
-    x = keras.layers.LeakyReLU()(x)
-    x = gandlf.layers.PermanentDropout(0.3)(x)
+    x = keras.layers.Dense(100, init='glorot_normal')(x)
+    x = keras.layers.Activation('tanh')(x)
 
-    x = keras.layers.Reshape((time_length, freq_length, 1))(x)
-
-    # x = keras.layers.wrappers.Bidirectional(keras.layers.GRU(128,
-    #         return_sequences=True,
-    #         activation='tanh'), 'concat')(x)
-
-    for _ in range(3):
-        x = keras.layers.Convolution2D(64, 5, 5,
-                activation=None,
-                border_mode='same')(x)
-        x = gandlf.layers.PermanentDropout(0.3)(x)
-        x = keras.layers.LeakyReLU()(x)
-
-    # x = keras.layers.TimeDistributed(
-    #         keras.layers.Dense(128, activation='linear'))(x)
-    # x = keras.layers.Activation('tanh')(x)
-
-    # x = keras.layers.TimeDistributed(
-    #         keras.layers.Dense(freq_length, activation='linear'))(x)
-    # output = keras.layers.LeakyReLU()(x)
-
-    x = keras.layers.Convolution2D(1, 5, 5,
-            activation=None,
-            border_mode='same')(x)
-    x = keras.layers.LeakyReLU()(x)
+    x = keras.layers.Dense(time_length * freq_length, init='glorot_uniform')(x)
+    x = keras.layers.LeakyReLU(0.01)(x)
 
     output = keras.layers.Reshape((time_length, freq_length))(x)
 
@@ -117,18 +96,22 @@ def build_discriminator(time_length, freq_length):
 
     real_sound = keras.layers.Input(shape=(time_length, freq_length))
 
-    x = keras.layers.Reshape((time_length, freq_length, 1))(real_sound)
+    x = real_sound
 
-    for _ in range(3):
-        x = keras.layers.Convolution2D(64, 5, 5,
-                activation=None,
-                border_mode='valid')(x)
-        x = keras.layers.LeakyReLU()(x)
+    x = keras.layers.Reshape((time_length, freq_length, 1))(x)
+    x = keras.layers.Convolution2D(64, 7, freq_length - 4,
+            activation=None,
+            border_mode='same')(x)
 
-    x = keras.layers.Flatten()(x)
+    x = keras.layers.GlobalMaxPooling2D()(x)
+
     x = keras.layers.Dropout(0.3)(x)
 
-    output = keras.layers.Dense(1, activation='sigmoid')(x)
+    x = keras.layers.Dense(128,
+            activation='tanh')(x)
+
+    output = keras.layers.Dense(1,
+            activation='sigmoid')(x)
 
     return keras.models.Model([real_sound], [output], name='discriminator')
 
@@ -150,8 +133,10 @@ def train(X_data, nb_epoch=10, rebuild=False, cache='/tmp/birdsong.h5'):
     discriminator = build_discriminator(time_length, freq_length)
 
     # Compile the model.
-    loss = {'dis': 'binary_crossentropy', 'gen': 'negative_binary_crossentropy'}
-    optimizer = ['sgd', keras.optimizers.Adam(lr=1e-4)]
+    loss = {'dis': 'binary_crossentropy', 'gen': 'binary_crossentropy'}
+    # loss = {'gen_real': 'maximize', 'fake': 'minimize'}
+    # optimizer = keras.optimizers.Adam(lr=1e-3, clipnorm=1.)
+    optimizer = ['sgd', keras.optimizers.Adam(lr=1e-3, clipnorm=1.)]
     model = gandlf.Model(generator=generator, discriminator=discriminator)
 
     # Loads existing weights.

@@ -46,7 +46,7 @@ def downsample_arr(x):
             x = x[:, :-1]
 
         return (x[::2, ::2] + x[::2, 1::2] +
-            x[1::2, ::2] + x[1::2, 1::2]) / 4
+                x[1::2, ::2] + x[1::2, 1::2]) / 4
 
     else:  # Batch-wise.
         if x.shape[1] % 2:
@@ -73,18 +73,23 @@ def plot_as_gif(x,
 
     # Gets the axis labels.
     flabels, tlabels = get_freq_time_labels(x.shape[1])
+    extent = [tlabels[0] * 1000, tlabels[-1] * 1000,
+              flabels[-1] / 1000, flabels[0] / 1000]
 
     if normalize:
         x = np.power(x, 0.45)
 
     # Plots the first sample.
     fig, ax = plt.subplots()
-    im = plt.imshow(x[0].T, animated=True, vmin=0, vmax=1)
+    im = plt.imshow(x[0].T,
+            interpolation='none',
+            animated=True,
+            vmin=0,
+            vmax=1,
+            extent=extent)
 
     # Fixes the dimensions.
     ax.invert_yaxis()
-    ax.set_xticklabels(tlabels)
-    ax.set_yticklabels(flabels)
     ax.set_xlabel('Time (msec)')
     ax.set_ylabel('Freq (kHz)')
 
@@ -123,17 +128,16 @@ def plot_sample(x,
     time_length = x.shape[1]
     flabels, tlabels = get_freq_time_labels(time_length)
 
-    # Converts to more readable version.
-    flabels = ['%.2f' % (i / 1000) for i in flabels]
-    tlabels = ['%.2f' % (i * 1000 - 1) for i in tlabels]
-
     if shuffle:
         idx = np.random.choice(np.arange(x.shape[0]), n)
         data = x[idx]
     else:
         data = x[:n]
 
-    plt.figure()
+    extent = [tlabels[0] * 1000, tlabels[-1] * 1000,
+              flabels[-1] / 1000, flabels[0] / 1000]
+
+    plt.figure(figsize=(width * 5, height * 5))
     for i in range(n):
         d = data[i].T
 
@@ -141,10 +145,8 @@ def plot_sample(x,
             d = np.power(d, 0.45)
 
         ax = plt.subplot(height, width, i + 1)
-        ax.imshow(d, vmin=0, vmax=1)
+        ax.imshow(d, interpolation='none', vmin=0, vmax=1, extent=extent)
         ax.invert_yaxis()
-        ax.set_xticklabels(tlabels)
-        ax.set_yticklabels(flabels)
         ax.set_xlabel('Time (msec)')
         ax.set_ylabel('Freq (kHz)')
 
@@ -166,7 +168,7 @@ def get_spectrogram(signal, fs):
         noverlap=NOVERLAP,
         nfft=NFFT)
 
-    for _ in range(DOWNSAMPLE):
+    for i in range(DOWNSAMPLE):
         freq = downsample_arr(freq)
         time = downsample_arr(time)
         data = downsample_arr(data)
@@ -208,7 +210,7 @@ def get_freq_time_labels(time_length):
 
     fname = os.listdir(WAV_SEGMENTS)[0]
     fpath = os.path.join(WAV_SEGMENTS, fname)
-    fs, data = wavfile.read(fpath)
+    fs, data = wavfile.read(fpath)  # fs usually ~250,000
     _, (freq, time) = get_spectrogram(data, fs)
 
     return freq, time[:time_length]
@@ -241,7 +243,7 @@ def get_all_spectrograms(time_length,
         def _check(sgram):
             """Makes sure the spectrogram is something we want to use."""
 
-            if np.max(sgram) < 0.1:
+            if np.max(sgram) < 0.4:
                 return False
 
             return True
