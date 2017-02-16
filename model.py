@@ -88,10 +88,20 @@ def get_filters(cache='/tmp/birdsong.h5'):
         raise ValueError('The cached weights should have a layer that '
                          'is named "filter_layer" to identify which layer '
                          'to visualize.')
+    if 'filter_weights_real' not in f:
+        raise ValueError('The cached weights should have a layer that '
+                         'is named "filter_weights_real" to identify the '
+                         'weights on each filter.')
 
     x = f['filter_layer']['filter_layer_W:0'].value
+    w = f['filter_weights_real']['filter_weights_W:0'].value
 
-    return x
+    x = x.transpose(3, 0, 1, 2).squeeze()
+
+    # Weights the filters.
+    y = x * np.expand_dims(w, -1)
+
+    return y
 
 
 def build_generator(time_length, freq_length):
@@ -122,15 +132,17 @@ def build_discriminator(time_length, freq_length):
     x = real_sound
 
     x = keras.layers.Reshape((time_length, freq_length, 1))(x)
-    x = keras.layers.Convolution2D(64, 7, freq_length - 4,
+    x = keras.layers.Convolution2D(64, 7, freq_length,
             activation=None,
             border_mode='same',
+            W_regularizer=keras.regularizers.l2(0.01),
             name='filter_layer')(x)
 
     x = keras.layers.GlobalMaxPooling2D()(x)
 
     output = keras.layers.Dense(1,
-            activation='sigmoid')(x)
+            activation='sigmoid',
+            name='filter_weights')(x)
 
     return keras.models.Model([real_sound], [output], name='discriminator')
 

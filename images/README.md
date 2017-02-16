@@ -103,3 +103,9 @@ The generator and discriminator were the same as the one used in 2. I experiment
 
 The visualized filters are the convolutional filters used by the discriminator. In other words, they are the features that the discriminator thinks are important to look for to figure out if the sample is real data or fake data.
 
+## 4
+
+The data was the same as in 3 (regular spectrograms, no downsizing).
+
+The filters in the discriminator were altered a little bit to make frequency line up exactly, so that the filter visualization is actually true. Also, L2 regularization was used on the filters in the discriminator, to encourage them to be relatively sparse (only respond to a small area). The filter visualizations are weighted according to the dense layer's weights.
+

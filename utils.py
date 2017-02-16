@@ -113,6 +113,7 @@ def plot_sample(x,
                 width=3,
                 height=2,
                 shuffle=True,
+                vmin=0,
                 vmax=1,
                 normalize=False):
     """Plots a sample of the data.
@@ -122,6 +123,7 @@ def plot_sample(x,
         title: str, the title of the plot.
         width: int, the number of images wide.
         height: int, the number of images tall.
+        vmin: float or None, the min of imshow.
         vmax: float or None, the max of imshow.
         shuffle: bool, if set, select randomly, otherwise select in order.
         normalize: bool, if set, increase the small values.
@@ -156,7 +158,7 @@ def plot_sample(x,
         ax.imshow(d,
                 interpolation='none',
                 aspect='auto',
-                vmin=0,
+                vmin=vmin,
                 vmax=vmax,
                 extent=extent)
         ax.invert_yaxis()

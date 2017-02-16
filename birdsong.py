@@ -67,15 +67,11 @@ if __name__ == '__main__':
 
     if args.plot_filters:
         x = model.get_filters()
-
-        # Convolution-specific reshaping.
-        x = x.transpose(3, 0, 1, 2).squeeze()
-        print(x.shape)
-
         utils.plot_sample(x, 'Convolutional filters',
-                vmax=None,
-                width=5,
-                height=1)
+                vmin=-1e-2,
+                vmax=1e-2,
+                width=4,
+                height=2)
 
     if args.plot_gif:
         pts = model.interpolate_latent_space(trained_model, nb_points=60)
