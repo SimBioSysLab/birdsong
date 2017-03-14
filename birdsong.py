@@ -13,7 +13,8 @@ import utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Code for training birdsong generator model.')
+            description='Code for training birdsong generator model.',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('-d', '--rebuild-data',
             default=False,
@@ -66,10 +67,17 @@ if __name__ == '__main__':
         utils.plot_sample(x, 'Generated spectrograms')
 
     if args.plot_filters:
-        x = model.get_filters()
-        utils.plot_sample(x, 'Convolutional filters',
-                vmin=-1e-2,
-                vmax=1e-2,
+        x = model.get_discriminator_filters()
+        utils.plot_sample(x, 'Discriminator filters',
+                vmin=None,
+                vmax=None,
+                width=4,
+                height=2)
+
+        x = model.get_generator_filters(args.time_length)
+        utils.plot_sample(x, 'Generator filters',
+                vmin=None,
+                vmax=None,
                 width=4,
                 height=2)
 

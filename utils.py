@@ -26,6 +26,7 @@ import scipy.io.wavfile as wavfile
 NFFT = 256
 NOVERLAP = 128
 DOWNSAMPLE = 0
+CLIP_BOTTOM = 20  # Clip the bottom frequencies.
 
 
 def downsample_arr(x):
@@ -178,6 +179,11 @@ def get_spectrogram(signal, fs):
         nperseg=NFFT,
         noverlap=NOVERLAP,
         nfft=NFFT)
+
+    # Clips the bottom part.
+    data = data[CLIP_BOTTOM:]
+    freq = freq[CLIP_BOTTOM:]
+    time = time[CLIP_BOTTOM:]
 
     for i in range(DOWNSAMPLE):
         freq = downsample_arr(freq)
